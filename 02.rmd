@@ -1,0 +1,90 @@
+---
+title: 'Statistical Inference Course Project: Inference'
+author: 'Kevin Tai'
+output:
+  pdf_document: default
+---
+  
+# Overview
+In the second portion of the project, we're going to analyze the ToothGrowth data in the R datasets package.
+
+1. Load the ToothGrowth data and perform some basic exploratory data analyses
+2. Provide a basic summary of the data.
+3. Use confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose. (Only use the techniques from class, even if there's other approaches worth considering)
+4. State your conclusions and the assumptions needed for your conclusions.
+
+# Data Loading and Exploration
+First let's load in the data and take a quick look at its structure.
+
+```{r, message=FALSE, warning=FALSE}
+library('ggplot2')
+library('datasets')
+data("ToothGrowth")
+str(ToothGrowth)
+```
+
+Let's look at how many values of each we have.
+
+```{r}
+table(ToothGrowth$dose)
+table(ToothGrowth$supp)
+```
+
+It appears that the data is evenly distributed among each of the three dosage levels and delivery methods.
+
+Let's also take a quick look at the distribution of lengths by both distribution method and dosage levels.
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(ToothGrowth, aes(x=len)) + geom_histogram() + 
+  facet_grid(supp ~ dose) + ggtitle('Odontoblast Lengths by Supp and Dose')
+```
+
+Looking at this chart, it seems that most of the explanatory power lies in the dosage rather than the method of delivery.
+
+# Data Summary
+According to the help file of the dataset, each row corresponds to a different guinea pig. The experiment was performed on a sample of 60 guinea pigs. The variable len refers to the length of odontoblasts, supp refers to the method of delivery, and dose refers to size of the dose.
+
+There are two types of delivery methods, orange juice (OJ) and ascorbic acid (VC). There are also three dosage levels, 0.5, 1.0, and 2.0
+
+# Hypothesis Testing: Tooth Growth by Supp and Dose
+We'd like to see if the length of the odontoblasts is influenced by either the method of delivery or the size of the dose.
+
+## Supp
+First let's look at tooth growth by delivery method. In this scenario, the null hypothesis is that there is no difference between the average length between the two delivery methods.
+
+To answer this question, we perform a non-paired Student's t-test on the data.
+
+```{r}
+t.test(len ~ supp, paired=FALSE, var.equal=TRUE, data=ToothGrowth)
+```
+
+Since the p-value is above .05, we accept the null hypothesis. 0 is within the 95 percent confidence interval, so we cannot accept the alternative hypothesis that the means are different. This matches with our intuition from the exploratory analysis.
+
+## Dose
+Let's also look at tooth growth by does. Since there are 3 dosage levels, we need to perform a t-test for each pair of dosage levels.
+
+```{r}
+set_a <- ToothGrowth[ToothGrowth$dose %in% c(.5, 1.0), ]
+t.test(len ~ dose, paired=FALSE, var.equal=TRUE, data=set_a)
+```
+
+Since the p-value is below the significance threshold, we reject the null hypothesis and say that the means between the 0.5 dosage group and the 1.0 dosage group is different from 0. Additionally, the confidence interval is completely below 0.
+
+```{r}
+set_b <- ToothGrowth[ToothGrowth$dose %in% c(1.0, 2.0), ]
+t.test(len ~ dose, paired=FALSE, var.equal=TRUE, data=set_b)
+```
+
+Again, the p-value is below the significance threshold so we reject the null hypothesis. The 1.0 and 2.0 dosage groups have different lengths. The confidence interval is completely below 0.
+
+```{r}
+set_c <- ToothGrowth[ToothGrowth$dose %in% c(.5, 2.0), ]
+t.test(len ~ dose, paired=FALSE, var.equal=TRUE, data=set_c)
+```
+
+Again, the p-value is below the significance threshold so we reject the null hypothesis. The lengths between the 0.5 and 2.0 dosage groups are different. The confidence interval is completely below 0.
+
+# Conclusions
+This analysis makes a few assumptions. First, the t-tests performed operated under the assumption that the variance between the different populations were identical. Additionally, we assume that the sample means follow a t-distribution.
+
+From the analysis, we conclude that the delivery method did not make a difference in odontoblast length. However, the dosage amount did make a difference. Higher dosage amounts had higher average odontoblast lengths.
